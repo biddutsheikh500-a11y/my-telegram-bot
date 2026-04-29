@@ -1,54 +1,102 @@
-import telebot
-import base64
-from datetime import datetime
+TAMIM OBSUCREATOR BOT
 
-# আপনার বট টোকেন
-TOKEN = '8684625421:AAG1OZBtpMob7XcKgY9O_8MSxgQKjaseL90'
-bot = telebot.TeleBot(TOKEN)
+Telegram HTML Obfuscator style bot (example starter)
 
-# প্রটেক্টেড হেডার টেমপ্লেট
-def get_header():
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    header = f""""""
-    return header
+IMPORTANT: For security, do NOT hardcode your real bot token here.
 
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    bot.reply_to(message, "স্বাগতম! আপনার HTML ফাইলটি পাঠান, আমি সেটিকে TAMIM OBSCUREATOR দিয়ে প্রটেক্ট করে দেব।")
+Revoke the old token you shared and generate a new one from BotFather.
 
-@bot.message_handler(content_types=['document'])
-def handle_docs(message):
-    if message.document.file_name.endswith('.html'):
-        file_info = bot.get_file(message.document.file_id)
-        downloaded_file = bot.download_file(file_info.file_path)
-        original_code = downloaded_file.decode('utf-8')
+import telebot from datetime import datetime import os
 
-        # লজিক: হেডার চেক করার স্ক্রিপ্ট যোগ করা
-        # যদি কেউ 'TAMIM_HTML_PROTECTED' লেখাটি মুছে ফেলে, তবে পেজ ব্ল্যাঙ্ক হয়ে যাবে বা লক হবে
-        encoded_content = base64.b64encode(original_code.encode('utf-8')).decode('utf-8')
+BOT_TOKEN = "8684625421:AAG1OZBtpMob7XcKgY9O_8MSxgQKjaseL90" BOT_NAME = "TAMIM OBSUCREATOR BOT" CHANNEL_LINK = "https://t.me/unknownapps1" SIGNATURE = "TAMIM_HTML_PROTECTED"
 
-        protected_html = f"""{get_header()}
+bot = telebot.TeleBot(BOT_TOKEN)
+
+HEADER_TEMPLATE = """<!--
+╔══════════════════════════════════════════════════════════╗
+║  🔒 PROTECTED HTML - DO NOT MODIFY THIS HEADER 🔒       ║
+║══════════════════════════════════════════════════════════║
+║  Obfuscated By:   @tamim_obsucreator_bot               ║
+║  TG Channel : {channel}                                ║
+║  Timestamp: {timestamp}                                ║
+║  Signature: {signature}                                ║
+║══════════════════════════════════════════════════════════║
+║  ⚠ WARNING: Removing or modifying this credit header   ║
+║  will cause this page to stop working!                 ║
+╚══════════════════════════════════════════════════════════╝
+--> """
+
+PROTECTION_SCRIPT = """
+
 <script>
-    (function() {{
-        const h = document.documentElement.innerHTML;
-        if (!h.includes('TAMIM_HTML_PROTECTED')) {{
-            document.body.innerHTML = '<h1 style="color:red; text-align:center; margin-top:20%;">SCREEN LOCKED: Unauthorized Modification!</h1>';
-            alert('Header modified! System locked by TAMIM OBSCUREATOR.');
-            throw new Error('Unauthorized');
-        }}
-    }})();
-</script>
-<script>
-    document.write(atob('{encoded_content}'));
+(function(){
+    const requiredSignature = 'TAMIM_HTML_PROTECTED';
+    const pageSource = document.documentElement.innerHTML;
+
+    function lockScreen(){
+        document.body.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;text-align:center;padding:20px;">
+                <div>
+                    <h1>ACCESS BLOCKED</h1>
+                    <p>Protected Header Removed or Modified!</p>
+                    <p>This HTML is locked by TAMIM OBSUCREATOR BOT</p>
+                </div>
+            </div>
+        `;
+        document.documentElement.style.overflow = 'hidden';
+        while(true){}
+    }
+
+    if(!pageSource.includes(requiredSignature)){
+        lockScreen();
+    }
+
+    document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+    document.addEventListener('keydown', function(e){
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key.toUpperCase()))) {
+            e.preventDefault();
+        }
+    });
+})();
 </script>"""
 
-        with open("protected_file.html", "w", encoding="utf-8") as f:
-            f.write(protected_html)
+def protect_html(content: str): timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S") header = HEADER_TEMPLATE.format( channel=CHANNEL_LINK, timestamp=timestamp, signature=SIGNATURE )
 
-        with open("protected_file.html", "rb") as f:
-            bot.send_document(message.chat.id, f, caption="✅ Your HTML is Protected by TAMIM OBSCUREATOR")
-    else:
-        bot.reply_to(message, "অনুগ্রহ করে একটি .html ফাইল পাঠান।")
+protected = header + "\n" + PROTECTION_SCRIPT + "\n" + content
+return protected
 
-print("Bot is running...")
-bot.polling()
+@bot.message_handler(commands=['start']) def start(message): text = f"""👋 Welcome!
+
+🔒 {BOT_NAME}
+
+Send your HTML file and I will add protected header + basic anti-copy protection.
+
+Features: ✅ Header Signature Lock ✅ Right Click Block ✅ Devtools Key Block ✅ Credit Protection ✅ Screen Lock if Header Removed """ bot.reply_to(message, text)
+
+@bot.message_handler(content_types=['document']) def handle_file(message): try: file_info = bot.get_file(message.document.file_id) downloaded = bot.download_file(file_info.file_path)
+
+original_name = message.document.file_name
+    input_path = original_name
+    output_path = f"protected_{original_name}"
+
+    with open(input_path, 'wb') as f:
+        f.write(downloaded)
+
+    with open(input_path, 'r', encoding='utf-8', errors='ignore') as f:
+        html_content = f.read()
+
+    result = protect_html(html_content)
+
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(result)
+
+    with open(output_path, 'rb') as f:
+        bot.send_document(message.chat.id, f, caption="✅ Protection Complete")
+
+    os.remove(input_path)
+    os.remove(output_path)
+
+except Exception as e:
+    bot.reply_to(message, f"Error: {str(e)}")
+
+print(f"{BOT_NAME} is running...") bot.infinity_polling()
