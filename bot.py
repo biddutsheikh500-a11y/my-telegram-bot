@@ -1,133 +1,111 @@
-TAMIM OBSUCREATOR BOT
+import io
+import logging
+import requests
+import cloudscraper
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
-Fixed Full Working Version
+# লগিং সেটআপ
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-IMPORTANT: Replace with your NEW bot token from BotFather
+# টোকেন ও কনফিগারেশন
+BOT_TOKEN = '8242188726:AAH0UCO-NbPAHsnsRnfJrSsM4qzDW2yxEcg'
+CHANNEL_USERNAME = '@unknownapps1'
+BOT_NAME_HEADER = "👑 TAMIM VAI PRO EXTRACTOR 👑\n\n"
+DEVELOPER_SIGNATURE = "\n\nDEVELOPER TAMIM BHAI"
 
-import telebot from datetime import datetime import os
+user_codes_db = {}
+user_states = {}
+total_users = set()
+total_files_generated = 0
 
-BOT_TOKEN = "8684625421:AAH_YOM0KENnGCVgjAe2jt-Fb6f4qfOVtjM" BOT_NAME = "TAMIM OBSUCREATOR BOT" CHANNEL_LINK = "https://t.me/unknownapps1" SIGNATURE = "TAMIM_HTML_PROTECTED"
+def get_main_keyboard():
+    return ReplyKeyboardMarkup([
+        ["📝 Coding To File", "🌐 Link To File"],
+        ["📊 Statistic"],
+        ["👨‍💻 Support", "👑 Developer"]
+    ], resize_keyboard=True)
 
-bot = telebot.TeleBot(BOT_TOKEN)
+async def check_membership(user_id: int, bot) -> bool:
+    try:
+        member = await bot.get_chat_member(chat_id=CHANNEL_USERNAME, user_id=user_id)
+        return member.status in ['member', 'administrator', 'creator']
+    except: return False
 
-HEADER_TEMPLATE = """<!--
-╔══════════════════════════════════════════════════════════╗
-║  🔒 PROTECTED HTML - DO NOT MODIFY THIS HEADER 🔒       ║
-║══════════════════════════════════════════════════════════║
-║  Obfuscated By:   @tamim_obsucreator_bot               ║
-║  TG Channel : {channel}                                ║
-║  Timestamp: {timestamp}                                ║
-║  Signature: {signature}                                ║
-║══════════════════════════════════════════════════════════║
-║  ⚠ WARNING: Removing or modifying this credit header   ║
-║  will cause this page to stop working!                 ║
-╚══════════════════════════════════════════════════════════╝
---> """
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    total_users.add(user_id)
+    if not await check_membership(user_id, context.bot):
+        keyboard = [[InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")]]
+        await update.message.reply_text(f"{BOT_NAME_HEADER}বটটি ব্যবহার করতে আগে জয়েন করুন।{DEVELOPER_SIGNATURE}", reply_markup=InlineKeyboardMarkup(keyboard))
+        return
+    await update.message.reply_text(f"{BOT_NAME_HEADER}তামিম ভাই, ফোন অফ থাকলেও আমি এখন কাজ করবো! লিংক দিন।{DEVELOPER_SIGNATURE}", reply_markup=get_main_keyboard())
 
-PROTECTION_SCRIPT = """
+async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    text = update.message.text
+    total_users.add(user_id)
 
-<script>
-(function(){
-    const requiredSignature = 'TAMIM_HTML_PROTECTED';
+    if text == "📝 Coding To File":
+        user_states[user_id] = "CODE"
+        await update.message.reply_text(f"{BOT_NAME_HEADER}আপনার কোডটি পেস্ট করুন।{DEVELOPER_SIGNATURE}")
+    elif text == "🌐 Link To File":
+        user_states[user_id] = "LINK"
+        await update.message.reply_text(f"{BOT_NAME_HEADER}যেকোনো লিংকে দিন। আমি অল-ইন-ওয়ান লজিক দিয়ে কোড আনছি।{DEVELOPER_SIGNATURE}")
+    elif text == "📊 Statistic":
+        await update.message.reply_text(f"{BOT_NAME_HEADER}📊 পরিসংখ্যান:\n👥 ইউজার: {len(total_users)}\n📁 ফাইল: {total_files_generated}{DEVELOPER_SIGNATURE}")
+    elif text in ["👨‍💻 Support", "👑 Developer"]:
+        await update.message.reply_text(f"{BOT_NAME_HEADER}সাপোর্ট: @tamim_bhai_dv{DEVELOPER_SIGNATURE}")
+    else:
+        state = user_states.get(user_id)
+        if state == "LINK":
+            proc = await update.message.reply_text("⚡ রিয়েল কোডিং এক্সট্রাক্ট করা হচ্ছে...")
+            try:
+                url = text if text.startswith("http") else "http://" + text
+                # প্রফেশনাল স্ক্র্যাপার লজিক
+                scraper = cloudscraper.create_scraper(browser={'browser': 'chrome', 'platform': 'windows', 'desktop': True})
+                response = scraper.get(url, timeout=30)
+                
+                if response.status_code == 200:
+                    user_codes_db[user_id] = response.text
+                    await proc.delete()
+                    await send_ext_menu(update)
+                else:
+                    await proc.edit_text(f"{BOT_NAME_HEADER}সাইটটি হয়তো ব্লক করা।{DEVELOPER_SIGNATURE}")
+            except Exception as e:
+                await proc.edit_text(f"এরর: {e}")
+        elif state == "CODE":
+            user_codes_db[user_id] = text
+            await send_ext_menu(update)
 
-    function lockScreen(){
-        document.body.innerHTML = `
-            <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;text-align:center;padding:20px;">
-                <div>
-                    <h1>ACCESS BLOCKED</h1>
-                    <p>Protected Header Removed or Modified!</p>
-                    <p>This HTML is locked by TAMIM OBSUCREATOR BOT</p>
-                </div>
-            </div>
-        `;
+async def send_ext_menu(update: Update):
+    keyboard = [
+        [InlineKeyboardButton("HTML (.html)", callback_data=".html"), InlineKeyboardButton("JS (.js)", callback_data=".js")],
+        [InlineKeyboardButton("PY (.py)", callback_data=".py"), InlineKeyboardButton("PHP (.php)", callback_data=".php")],
+        [InlineKeyboardButton("CSS (.css)", callback_data=".css"), InlineKeyboardButton("TXT (.txt)", callback_data=".txt")]
+    ]
+    await update.message.reply_text(f"{BOT_NAME_HEADER}সঠিক কোড পাওয়া গেছে! ফরম্যাট বেছে নিন।{DEVELOPER_SIGNATURE}", reply_markup=InlineKeyboardMarkup(keyboard))
 
-        document.documentElement.style.overflow = 'hidden';
+async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    global total_files_generated
+    query = update.callback_query
+    await query.answer()
+    user_id = query.from_user.id
+    ext = query.data
+    code = user_codes_db.get(user_id)
 
-        setInterval(function(){
-            document.body.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;text-align:center;padding:20px;">
-                    <div>
-                        <h1>ACCESS BLOCKED</h1>
-                        <p>Protected Header Removed!</p>
-                    </div>
-                </div>
-            `;
-        }, 1000);
-    }
+    if code:
+        file_data = io.BytesIO(code.encode('utf-8'))
+        file_data.name = f"Tamim_Source{ext}"
+        await context.bot.send_document(chat_id=user_id, document=file_data, caption=f"{BOT_NAME_HEADER}আপনার ফাইল তৈরি।{DEVELOPER_SIGNATURE}")
+        total_files_generated += 1
+    else:
+        await query.message.reply_text("আবার ট্রাই করুন।")
 
-    const source = document.documentElement.innerHTML;
-
-    if (!source.includes(requiredSignature)) {
-        lockScreen();
-    }
-
-    document.addEventListener('contextmenu', function(e){
-        e.preventDefault();
-    });
-
-    document.addEventListener('keydown', function(e){
-        if (
-            e.key === 'F12' ||
-            (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key.toUpperCase()))
-        ) {
-            e.preventDefault();
-        }
-    });
-})();
-</script>"""
-
-def protect_html(content): timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-header = HEADER_TEMPLATE.format(
-    channel=CHANNEL_LINK,
-    timestamp=timestamp,
-    signature=SIGNATURE
-)
-
-protected = header + "\n" + PROTECTION_SCRIPT + "\n" + content
-return protected
-
-@bot.message_handler(commands=['start']) def start(message): text = f"""👋 Welcome!
-
-🔒 {BOT_NAME}
-
-Send your HTML file and I will protect it.
-
-Features: ✅ Header Signature Lock ✅ Right Click Block ✅ Devtools Key Block ✅ Credit Protection ✅ Screen Lock if Header Removed ✅ Protected HTML Output """
-
-bot.reply_to(message, text)
-
-@bot.message_handler(content_types=['document']) def handle_file(message): try: file_info = bot.get_file(message.document.file_id) downloaded_file = bot.download_file(file_info.file_path)
-
-original_name = message.document.file_name
-    input_path = original_name
-    output_path = f"protected_{original_name}"
-
-    with open(input_path, 'wb') as file:
-        file.write(downloaded_file)
-
-    with open(input_path, 'r', encoding='utf-8', errors='ignore') as file:
-        html_content = file.read()
-
-    protected_content = protect_html(html_content)
-
-    with open(output_path, 'w', encoding='utf-8') as file:
-        file.write(protected_content)
-
-    with open(output_path, 'rb') as file:
-        bot.send_document(
-            message.chat.id,
-            file,
-            caption="✅ Your HTML is Protected by TAMIM OBSUCREATOR"
-        )
-
-    if os.path.exists(input_path):
-        os.remove(input_path)
-
-    if os.path.exists(output_path):
-        os.remove(output_path)
-
-except Exception as e:
-    bot.reply_to(message, f"Error: {str(e)}")
-
-print(f"{BOT_NAME} is running...") bot.infinity_polling()
+if __name__ == '__main__':
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_messages))
+    app.add_handler(CallbackQueryHandler(button_callback))
+    print("Bot is running...")
+    app.run_polling()
