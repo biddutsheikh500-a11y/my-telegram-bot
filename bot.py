@@ -37,9 +37,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     total_users.add(user_id)
     if not await check_membership(user_id, context.bot):
         keyboard = [[InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME[1:]}")]]
-        await update.message.reply_text(f"{BOT_NAME_HEADER}বটটি ব্যবহার করতে আগে জয়েন করুন।{DEVELOPER_SIGNATURE}", reply_markup=InlineKeyboardMarkup(keyboard))
+        await update.message.reply_text(f"{BOT_NAME_HEADER} আমার টেলিগ্রাম চ্যানেলে জয়েন না থাকলে বটের মেইন মেনুতে যেতে পারবেন না আগে জয়েন করুন।{DEVELOPER_SIGNATURE}", reply_markup=InlineKeyboardMarkup(keyboard))
         return
-    await update.message.reply_text(f"{BOT_NAME_HEADER}তামিম ভাই, ফোন অফ থাকলেও আমি এখন কাজ করবো! লিংক দিন।{DEVELOPER_SIGNATURE}", reply_markup=get_main_keyboard())
+    await update.message.reply_text(f"{BOT_NAME_HEADER} বট টি চালু আছে এখন কি করতে চান নিচে থেকে সিলেক্ট করুন।{DEVELOPER_SIGNATURE}", reply_markup=get_main_keyboard())
 
 async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -51,11 +51,11 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"{BOT_NAME_HEADER}আপনার কোডটি পেস্ট করুন।{DEVELOPER_SIGNATURE}")
     elif text == "🌐 Link To File":
         user_states[user_id] = "LINK"
-        await update.message.reply_text(f"{BOT_NAME_HEADER}যেকোনো লিংকে দিন। আমি অল-ইন-ওয়ান লজিক দিয়ে কোড আনছি।{DEVELOPER_SIGNATURE}")
+        await update.message.reply_text(f"{BOT_NAME_HEADER} যেকোনো ডোমেইনের কোডিং দেওয়া যাবে । আপনার ডোমেইন বা লিংকটি দিন।{DEVELOPER_SIGNATURE}")
     elif text == "📊 Statistic":
         await update.message.reply_text(f"{BOT_NAME_HEADER}📊 পরিসংখ্যান:\n👥 ইউজার: {len(total_users)}\n📁 ফাইল: {total_files_generated}{DEVELOPER_SIGNATURE}")
     elif text in ["👨‍💻 Support", "👑 Developer"]:
-        await update.message.reply_text(f"{BOT_NAME_HEADER}সাপোর্ট: @tamim_bhai_dv{DEVELOPER_SIGNATURE}")
+        await update.message.reply_text(f"{BOT_NAME_HEADER} কিছুতে সমস্যা হলে তামিম ভাইকে জানান বা যদি কেউ এই ধরনের বোর্ড বানাইতে চান তাহলেও জানান @tamim_bhai_dv{DEVELOPER_SIGNATURE}")
     else:
         state = user_states.get(user_id)
         if state == "LINK":
@@ -71,7 +71,7 @@ async def handle_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     await proc.delete()
                     await send_ext_menu(update)
                 else:
-                    await proc.edit_text(f"{BOT_NAME_HEADER}সাইটটি হয়তো ব্লক করা।{DEVELOPER_SIGNATURE}")
+                    await proc.edit_text(f"{BOT_NAME_HEADER} সাইটটি আমি আনতে পারিনি যদি আপনার সাইটটি ইমার্জেন্সি আনা লাগে তামিম ভাইকে জানান তামিম ভাই আপনাকে এনে দিবে। @tamim_bhai_dv{DEVELOPER_SIGNATURE}")
             except Exception as e:
                 await proc.edit_text(f"এরর: {e}")
         elif state == "CODE":
